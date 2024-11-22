@@ -1,3 +1,5 @@
 /origin_db
 /swift
 /my_tokenizer
+
+**/__pycache__

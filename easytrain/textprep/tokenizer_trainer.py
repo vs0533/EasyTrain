@@ -57,7 +57,7 @@ def train_tokenizer(dataset, output_dir, vocab_size=30000, special_tokens_ext=No
 
     # 调试：检查数据是否正确加载
     print("Checking dataset samples...")
-    for sample in dataset.take(3):
+    for sample in dataset.take(1):
         print(sample)
 
     tokenizer.train_from_iterator(batch_iterator(), trainer)

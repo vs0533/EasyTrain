@@ -22,6 +22,8 @@ def load_dataset_custom(data_files, streaming=True):
     for name, file_pattern in data_files.items():
         # 获取扩展名
         file_ext = file_pattern.split(".")[-1]
+        if file_ext == "txt":
+            file_ext = "text"
 
         dataset = load_dataset(
             file_ext, data_files={name: file_pattern}, streaming=streaming

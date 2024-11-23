@@ -5,7 +5,7 @@
 from datasets import load_dataset, concatenate_datasets
 
 
-def load_dataset_custom(data_files, streaming=True):
+def load_dataset_custom(data_files, streaming=True,field_mapping=None):
     """
     加载数据集，支持多种文件类型并合并。
 
@@ -25,14 +25,31 @@ def load_dataset_custom(data_files, streaming=True):
         if file_ext == "txt":
             file_ext = "text"
 
+        print(f"正在加载数据集:{name}")
         dataset = load_dataset(
             file_ext, data_files={name: file_pattern}, streaming=streaming
         )
+        print(f"数据集加载完成:{name}:\n{dataset}")
+        print("=====================================")
+        
+        # 加载数据局
+        # loaded_dataset = dataset[name]
 
+        # 如果提供了field_mapping参数，则根据映射关系重命名字段
+        if field_mapping is not None:
+            if name in field_mapping:
+                print(f"重命名字段:{field_mapping[name]} -> 'text'")
+                dataset = dataset.rename_column(field_mapping[name], "text")
+        
+        
         # 添加到数据集列表
         datasets.append(dataset[name])
 
     # 如果只有一个数据集直接返回，否则合并
     if len(datasets) == 1:
+        print("只有一个数据集，直接返回")
         return datasets[0]
-    return concatenate_datasets(datasets)
+    print("合并数据集")
+    result = concatenate_datasets(datasets)
+    print("数据集合并完成...")
+    return result

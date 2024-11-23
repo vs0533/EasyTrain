@@ -43,7 +43,7 @@ def train_tokenizer(dataset, output_dir, vocab_size=30000, special_tokens_ext=No
     trainer = BpeTrainer(vocab_size=vocab_size, special_tokens=special_tokens)
 
     # 定义迭代器
-    def batch_iterator(batch_size=1000):
+    def batch_iterator(batch_size=100000):
         buffer = []
         for example in dataset:
             if "text" not in example:

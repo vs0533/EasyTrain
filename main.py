@@ -24,7 +24,9 @@ def main():
     # print(dataset.features)
     # print(dataset.info)
     # 训练分词器
-    train_tokenizer(dataset, output_dir="./tokenizer.json", vocab_size=30000)
+    train_tokenizer(
+        dataset, output_dir="./tokenizer.json", vocab_size=30000, batch_size=1000
+    )
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ def train_tokenizer(
     vocab_size=30000,
     special_tokens_ext=None,
     pretrained_tokenizer_path=None,
+    batch_size=1000,
 ):
     """
     使用流式数据训练分词器。
@@ -68,11 +69,12 @@ def train_tokenizer(
     trainer = BpeTrainer(vocab_size=vocab_size, special_tokens=special_tokens)
 
     # 定义迭代器
-    def batch_iterator(batch_size=1000):
+    def batch_iterator(batch_size=batch_size):
         buffer = []
         for example in dataset:
-            if "text" not in example:
-                raise KeyError("Dataset examples must have a 'text' field.")
+            if "text" not in example or example["text"] is None:
+                print("Dataset examples must have a 'text' field.")
+                continue
             buffer.append(example["text"])
             if len(buffer) >= batch_size:
                 yield buffer
@@ -82,8 +84,6 @@ def train_tokenizer(
 
     # 定义迭代器：非批量版本
     def sample_iterator():
-        if dataset is None:
-            print("Dataset is None.")
         for example in dataset:
             if "text" not in example or example["text"] is None:
                 print("Dataset examples must have a 'text' field.")
@@ -97,7 +97,13 @@ def train_tokenizer(
     for sample in dataset.take(1):
         print(sample)
 
-    tokenizer.train_from_iterator(sample_iterator(), trainer)
+    # 训练分词器 兼容批量训练
+    if batch_size is None:
+        tokenizer.train_from_iterator(sample_iterator(), trainer)
+    else:
+        print("开始增量训练...")
+        for batch in batch_iterator(batch_size):
+            tokenizer.train_from_iterator(batch, trainer)
 
     if output_dir is None:
         raise ValueError("output_dir must be specified")

@@ -43,7 +43,7 @@ def train_tokenizer(dataset, output_dir, vocab_size=30000, special_tokens_ext=No
     trainer = BpeTrainer(vocab_size=vocab_size, special_tokens=special_tokens)
 
     # 定义迭代器
-    def batch_iterator(batch_size=100000):
+    def batch_iterator(batch_size=1000):
         buffer = []
         for example in dataset:
             if "text" not in example:
@@ -54,13 +54,20 @@ def train_tokenizer(dataset, output_dir, vocab_size=30000, special_tokens_ext=No
                 buffer = []
         if buffer:  # 输出剩余的缓冲数据
             yield buffer
+            
+    # 定义迭代器：非批量版本
+    def sample_iterator():
+        for example in dataset:
+            if "text" not in example:
+                raise KeyError("Dataset examples must have a 'text' field.")
+            yield example["text"]
 
     # 调试：检查数据是否正确加载
     print("Checking dataset samples...")
     for sample in dataset.take(1):
         print(sample)
 
-    tokenizer.train_from_iterator(batch_iterator(), trainer)
+    tokenizer.train_from_iterator(sample_iterator(), trainer)
 
     if output_dir is None:
         raise ValueError("output_dir must be specified")

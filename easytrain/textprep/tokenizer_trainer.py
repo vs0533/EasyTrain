@@ -6,10 +6,12 @@ from tokenizers import Tokenizer
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import ByteLevel
+from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 from transformers import PreTrainedTokenizerFast
 import os
 
 from easytrain import config
+from easytrain.utils import isfile
 
 
 def train_tokenizer(
@@ -28,11 +30,16 @@ def train_tokenizer(
         output_dir (str): 保存分词器的目录。
         vocab_size (int): 词汇表大小。
         special_tokens (list): 特殊标记列表。
+        special_tokens_ext (list): 扩展的特殊标记列表。
         pretrained_tokenizer_path (str): 预训练分词器路径。
 
     Returns:
         None
     """
+    
+    if output_dir is None:
+        raise ValueError("保存目录不能为空！")
+    
     special_tokens = [
         config.BOS_TOKEN,
         config.EOS_TOKEN,
@@ -56,14 +63,19 @@ def train_tokenizer(
                 hf_tokenizer.backend_tokenizer
             )  # 这是tokenizers库的Tokenizer对象
         # json格式的分词器
-        elif os.path.isfile(pretrained_tokenizer_path):
+        else:
             print("加载JSON格式预训练分词器...")
             tokenizer = Tokenizer.from_file(pretrained_tokenizer_path)
     else:
         print("初始化新分词器...")
         tokenizer = Tokenizer(BPE())
+        
+    # 确保预处理器和解码器存在
+    if tokenizer.pre_tokenizer is None:
+        tokenizer.pre_tokenizer = ByteLevel(add_prefix_space=False)
+    if tokenizer.decoder is None:
+        tokenizer.decoder = ByteLevelDecoder()
 
-    tokenizer.pre_tokenizer = ByteLevel()
     print("Special Tokens:", special_tokens)
     # 定义训练器
     trainer = BpeTrainer(vocab_size=vocab_size, special_tokens=special_tokens)
@@ -101,20 +113,43 @@ def train_tokenizer(
     if batch_size is None:
         tokenizer.train_from_iterator(sample_iterator(), trainer)
     else:
-        print("开始增量训练...")
+        print("开始分批训练...")
+        batch_ctr = 0
+        save_interval = 1  # 指定间隔批次
         for batch in batch_iterator(batch_size):
+            batch_ctr += 1
+            print(f"批次 {batch_ctr}...")
             tokenizer.train_from_iterator(batch, trainer)
+            if save_interval is not None and save_interval > 0 and batch_ctr % save_interval == 0:
+                interim_output_dir = os.path.join("tokenizer_Checkpoint", f"interim_{batch_ctr}.json")
+                print(f"保存中间分词器到 {interim_output_dir}...")
+                save_tokenizer(tokenizer, interim_output_dir, special_tokens_ext)
 
-    if output_dir is None:
-        raise ValueError("output_dir must be specified")
+    save_tokenizer(tokenizer, output_dir, special_tokens_ext)
 
-    # 确保目录存在
-    os.makedirs(output_dir, exist_ok=True)
 
-    if os.path.isfile(output_dir) and output_dir.endswith(".json"):
+# 保存分词器
+def save_tokenizer(tokenizer, output_dir,special_tokens_ext=None):
+    """
+    保存分词器。
+
+    Args:
+        tokenizer (Tokenizer): 分词器。
+        output_dir (str): 保存目录。
+
+    Returns:
+        None
+    """
+    if isfile(output_dir) and output_dir.endswith(".json"):
+        print(f"保存Json分词器{output_dir}...")
+        directory = os.path.dirname(output_dir)
+        if directory != "":
+            os.makedirs(directory, exist_ok=True)
         tokenizer.save(output_dir)
         return
-    elif os.path.isdir(output_dir):
+    else:
+        # 确保目录存在
+        os.makedirs(output_dir, exist_ok=True)
         Warning(
             f"选择了保存为hf格式的分词器，注意修改PreTrainedTokenizer的[特殊标记]相关参数"
         )

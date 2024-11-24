@@ -1,0 +1,6 @@
+# 中文维基百科
+modelscope download --dataset opencsg/chinese-cosmopedia --local_dir ./wiki_chinese
+
+# 中文色情文学数据集
+huggingface-cli download --repo-type dataset --resume-download ystemsrx/Erotic_Literature_Collection --local-dir ./sex1
+huggingface-cli download --repo-type dataset --resume-download li-long/modified_erotic_literature_collection --local-dir ./sex2

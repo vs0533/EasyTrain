@@ -2,11 +2,12 @@
     训练分词器
 """
 
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer,Regex
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import ByteLevel,Split,Sequence
 from tokenizers.decoders import ByteLevel as ByteLevelDecoder
+
 from transformers import PreTrainedTokenizerFast
 import os
 
@@ -75,7 +76,7 @@ def train_tokenizer(
         # 使用 Split 和 ByteLevel 预处理器，并组合它们
         tokenizer.pre_tokenizer = Sequence([
             Split(
-                pattern=r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+",  # 正则表达式
+                pattern=Regex(r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"),                
                 behavior="isolated",  # isolated 行为
                 invert=False
             ),
@@ -124,7 +125,7 @@ def train_tokenizer(
     else:
         print("开始分批训练...")
         batch_ctr = 0
-        save_interval = 1  # 指定间隔批次
+        save_interval = 10  # 指定间隔批次
         for batch in batch_iterator(batch_size):
             batch_ctr += 1
             print(f"批次 {batch_ctr}...")

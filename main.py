@@ -11,7 +11,7 @@ def main():
     }  # 示例数据文件
     dataset = load_dataset_custom(
         data_files=data_files,
-        streaming=False,
+        streaming=True,
         field_mapping={"sex2": "output"},
     )
 
@@ -24,7 +24,7 @@ def main():
     # print(dataset.features)
     # print(dataset.info)
     # 训练分词器
-    train_tokenizer(dataset, output_dir="./tokenizer", vocab_size=30000)
+    train_tokenizer(dataset, output_dir="./tokenizer.json", vocab_size=30000)
 
 
 if __name__ == "__main__":

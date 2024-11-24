@@ -82,10 +82,15 @@ def train_tokenizer(
 
     # 定义迭代器：非批量版本
     def sample_iterator():
+        if dataset is None:
+            print("Dataset is None.")
         for example in dataset:
-            if "text" not in example:
-                raise KeyError("Dataset examples must have a 'text' field.")
-            yield example["text"]
+            if "text" not in example or example["text"] is None:
+                print("Dataset examples must have a 'text' field.")
+                continue
+                # raise KeyError("Dataset examples must have a 'text' field.")
+            # print(f"Processing example: {example['text'][:25]}...")  # 调试
+            yield example["text"].strip()
 
     # 调试：检查数据是否正确加载
     print("Checking dataset samples...")

@@ -12,7 +12,13 @@ import os
 from easytrain import config
 
 
-def train_tokenizer(dataset, output_dir, vocab_size=30000, special_tokens_ext=None):
+def train_tokenizer(
+    dataset,
+    output_dir,
+    vocab_size=30000,
+    special_tokens_ext=None,
+    pretrained_tokenizer_path=None,
+):
     """
     使用流式数据训练分词器。
 
@@ -21,6 +27,7 @@ def train_tokenizer(dataset, output_dir, vocab_size=30000, special_tokens_ext=No
         output_dir (str): 保存分词器的目录。
         vocab_size (int): 词汇表大小。
         special_tokens (list): 特殊标记列表。
+        pretrained_tokenizer_path (str): 预训练分词器路径。
 
     Returns:
         None
@@ -36,7 +43,25 @@ def train_tokenizer(dataset, output_dir, vocab_size=30000, special_tokens_ext=No
         special_tokens.extend(special_tokens_ext)
 
     # 初始化分词器
-    tokenizer = Tokenizer(BPE())
+    tokenizer = None
+    if pretrained_tokenizer_path is not None:
+        # hf格式的分词器
+        if os.path.isdir(pretrained_tokenizer_path):
+            print("加载HF格式预训练分词器...")
+            hf_tokenizer = PreTrainedTokenizerFast.from_pretrained(
+                pretrained_tokenizer_path
+            )
+            tokenizer = (
+                hf_tokenizer.backend_tokenizer
+            )  # 这是tokenizers库的Tokenizer对象
+        # json格式的分词器
+        elif os.path.isfile(pretrained_tokenizer_path):
+            print("加载JSON格式预训练分词器...")
+            tokenizer = Tokenizer.from_file(pretrained_tokenizer_path)
+    else:
+        print("初始化新分词器...")
+        tokenizer = Tokenizer(BPE())
+
     tokenizer.pre_tokenizer = ByteLevel()
     print("Special Tokens:", special_tokens)
     # 定义训练器
@@ -54,7 +79,7 @@ def train_tokenizer(dataset, output_dir, vocab_size=30000, special_tokens_ext=No
                 buffer = []
         if buffer:  # 输出剩余的缓冲数据
             yield buffer
-            
+
     # 定义迭代器：非批量版本
     def sample_iterator():
         for example in dataset:

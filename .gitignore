@@ -1,6 +1,4 @@
-/origin_db
-/swift
-/my_tokenizer
+/tokenizer
 
 **/__pycache__/
 **/*.egg-info/

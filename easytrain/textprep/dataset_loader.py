@@ -3,9 +3,10 @@
 """
 
 from datasets import load_dataset, concatenate_datasets
+import datasets
 
 
-def load_dataset_custom(data_files, streaming=True,field_mapping=None):
+def load_dataset_custom(data_files, streaming=True, field_mapping=None):
     """
     加载数据集，支持多种文件类型并合并。
 
@@ -31,17 +32,15 @@ def load_dataset_custom(data_files, streaming=True,field_mapping=None):
         )
         print(f"数据集加载完成:{name}:\n{dataset}")
         print("=====================================")
-        
-        # 加载数据局
-        # loaded_dataset = dataset[name]
 
         # 如果提供了field_mapping参数，则根据映射关系重命名字段
         if field_mapping is not None:
             if name in field_mapping:
                 print(f"重命名字段:{field_mapping[name]} -> 'text'")
-                dataset = dataset.rename_column(field_mapping[name], "text")
-        
-        
+                # dataset = dataset.rename_column(field_mapping[name], "text")
+                # 可能在流式加载中第一次调用时无法识别字段，因此使用map
+                dataset = dataset.map(lambda x: {"text": x[field_mapping[name]]})
+
         # 添加到数据集列表
         datasets.append(dataset[name])
 

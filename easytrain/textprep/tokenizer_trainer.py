@@ -5,7 +5,7 @@
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
-from tokenizers.pre_tokenizers import ByteLevel
+from tokenizers.pre_tokenizers import ByteLevel,Split,Sequence
 from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 from transformers import PreTrainedTokenizerFast
 import os
@@ -72,7 +72,16 @@ def train_tokenizer(
         
     # 确保预处理器和解码器存在
     if tokenizer.pre_tokenizer is None:
-        tokenizer.pre_tokenizer = ByteLevel(add_prefix_space=False)
+        # 使用 Split 和 ByteLevel 预处理器，并组合它们
+        tokenizer.pre_tokenizer = Sequence([
+            Split(
+                pattern=r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+",  # 正则表达式
+                behavior="isolated",  # isolated 行为
+                invert=False
+            ),
+            ByteLevel(add_prefix_space=False, trim_offsets=False, use_regex=False)
+        ])
+        
     if tokenizer.decoder is None:
         tokenizer.decoder = ByteLevelDecoder()
 

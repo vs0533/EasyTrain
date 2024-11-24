@@ -18,7 +18,7 @@ def main():
     
     dataset = dataset.shuffle(seed=42)
     # dataset = dataset.skip(18000)
-    dataset = dataset.take(3000)
+    # dataset = dataset.take(3000)
 
     # count = sum(1 for _ in dataset)
     # print(count)
@@ -28,7 +28,7 @@ def main():
     # print(dataset.info)
     # 训练分词器
     train_tokenizer(
-        dataset, output_dir="tokenizer", vocab_size=30000, batch_size=3000,pretrained_tokenizer_path="tokenizer2"
+        dataset, output_dir="tokenizer", vocab_size=30000, batch_size=3000
     )
 
 

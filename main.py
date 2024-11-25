@@ -7,8 +7,8 @@ def main():
     # 1. 配置参数
     data_files = {
         "wiki": "./dataset_origin/wiki_chinese/data/*.parquet",
-        # "sex1": "./dataset_origin/sex1/*.json",
-        # "sex2": "./dataset_origin/sex2/modified_erotic_literature_collection.csv",
+        "sex1": "./dataset_origin/sex1/*.json",
+        "sex2": "./dataset_origin/sex2/modified_erotic_literature_collection.csv",
     }  # 示例数据文件
     dataset = load_dataset_custom(
         data_files=data_files,

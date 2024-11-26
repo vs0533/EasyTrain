@@ -2,17 +2,17 @@
     训练分词器
 """
 
-from tokenizers import Tokenizer,Regex
+from tokenizers import Tokenizer, Regex
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
-from tokenizers.pre_tokenizers import ByteLevel,Split,Sequence
+from tokenizers.pre_tokenizers import ByteLevel, Split, Sequence
 from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 
 from transformers import PreTrainedTokenizerFast
 import os
 
-from easytrain import config
-from easytrain.utils import isfile
+from .. import config
+from .. import utils
 
 
 def train_tokenizer(
@@ -37,10 +37,10 @@ def train_tokenizer(
     Returns:
         None
     """
-    
+
     if output_dir is None:
         raise ValueError("保存目录不能为空！")
-    
+
     special_tokens = [
         config.BOS_TOKEN,
         config.EOS_TOKEN,
@@ -70,19 +70,23 @@ def train_tokenizer(
     else:
         print("初始化新分词器...")
         tokenizer = Tokenizer(BPE())
-        
+
     # 确保预处理器和解码器存在
     if tokenizer.pre_tokenizer is None:
         # 使用 Split 和 ByteLevel 预处理器，并组合它们
-        tokenizer.pre_tokenizer = Sequence([
-            Split(
-                pattern=Regex(r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"),                
-                behavior="isolated",  # isolated 行为
-                invert=False
-            ),
-            ByteLevel(add_prefix_space=False, trim_offsets=False, use_regex=False)
-        ])
-        
+        tokenizer.pre_tokenizer = Sequence(
+            [
+                Split(
+                    pattern=Regex(
+                        r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
+                    ),
+                    behavior="isolated",  # isolated 行为
+                    invert=False,
+                ),
+                ByteLevel(add_prefix_space=False, trim_offsets=False, use_regex=False),
+            ]
+        )
+
     if tokenizer.decoder is None:
         tokenizer.decoder = ByteLevelDecoder()
 
@@ -130,8 +134,14 @@ def train_tokenizer(
             batch_ctr += 1
             print(f"批次 {batch_ctr}...")
             tokenizer.train_from_iterator(batch, trainer)
-            if save_interval is not None and save_interval > 0 and batch_ctr % save_interval == 0:
-                interim_output_dir = os.path.join("tokenizer_Checkpoint", f"interim_{batch_ctr}.json")
+            if (
+                save_interval is not None
+                and save_interval > 0
+                and batch_ctr % save_interval == 0
+            ):
+                interim_output_dir = os.path.join(
+                    "tokenizer_Checkpoint", f"interim_{batch_ctr}"
+                )
                 print(f"保存中间分词器到 {interim_output_dir}...")
                 save_tokenizer(tokenizer, interim_output_dir, special_tokens_ext)
 
@@ -139,7 +149,7 @@ def train_tokenizer(
 
 
 # 保存分词器
-def save_tokenizer(tokenizer, output_dir,special_tokens_ext=None):
+def save_tokenizer(tokenizer, output_dir, special_tokens_ext=None):
     """
     保存分词器。
 
@@ -150,7 +160,7 @@ def save_tokenizer(tokenizer, output_dir,special_tokens_ext=None):
     Returns:
         None
     """
-    if isfile(output_dir) and output_dir.endswith(".json"):
+    if utils.isfile(output_dir) and output_dir.endswith(".json"):
         print(f"保存Json分词器{output_dir}...")
         directory = os.path.dirname(output_dir)
         if directory != "":

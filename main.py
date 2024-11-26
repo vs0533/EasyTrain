@@ -1,4 +1,4 @@
-from easytrain import load_dataset_custom, train_tokenizer
+from easytrain import load_dataset_custom, train_tokenizer, process_data_to_fixed_length
 from datasets import load_dataset
 from easytrain import utils
 
@@ -15,9 +15,16 @@ def main():
         streaming=True,
         field_mapping={"sex2": "output"},
     )
-    
+
     dataset = dataset.shuffle(seed=42)
-    # dataset = dataset.skip(18000)
+    # process_data_to_fixed_length(
+    #     dataset,
+    #     tokenizer_name="tokenizer_Checkpoint/interim_1160.json",
+    #     max_length=512,
+    #     output_file="sex2.txt",
+    # )
+
+    dataset = dataset.skip(4750000)
     # dataset = dataset.take(3000)
 
     # count = sum(1 for _ in dataset)
@@ -28,7 +35,11 @@ def main():
     # print(dataset.info)
     # 训练分词器
     train_tokenizer(
-        dataset, output_dir="tokenizer", vocab_size=30000, batch_size=3000
+        dataset,
+        output_dir="tokenizer",
+        vocab_size=30000,
+        batch_size=10000,
+        pretrained_tokenizer_path="tokenizer_Checkpoint/interim_1160.json",
     )
 
 

@@ -2,100 +2,74 @@ import re
 from .tokenizer_loader import tokenizer_loader
 
 
-def process_data_to_fixed_length(
+def process_data_with_limited_length_and_sliding(
     dataset,
     tokenizer_name,
     max_length,
     output_file,
-    discard_overlength=False,
-    save_as_tokens=False,
+    save_as_tokens=False,  # 保存为 Token 或句子
+    overlap=2,  # 滑动窗口的重叠数
 ):
-    """
-    处理数据集，将超长句子截断或丢弃，并尽量拼接短句使块接近 max_length。
-
-    Args:
-        dataset (Dataset): 数据集，每个样本包含 `text` 字段。
-        tokenizer_name (str): 分词器名称。
-        max_length (int): 最大 Token 长度。
-        output_file (str): 输出文件路径。
-        discard_overlength (bool): 是否丢弃超长句子（默认截断保存）。
-        save_as_tokens (bool): 是否将输出保存为 token 序列（默认 True）。
-
-    Returns:
-        None
-    """
     tokenizer = tokenizer_loader(tokenizer_name)
-    current_chunk = []
-    current_length = 0
 
     def split_sentences(text):
         """按标点符号切分句子"""
         if not isinstance(text, str):
             raise TypeError("expected string or bytes-like object")
-        # 使用正则表达式匹配句子和分隔符
-        return re.findall(r"[^,，.。！？\n]+[，。！？]?", text)
+        return re.findall(r"[^,，.。！？;；\n]+[，。！？;；]?", text)
 
-    with open(output_file, "w") as f, open(
-        "truncated_sentences.txt", "w"
-    ) as trunc_file:
+    def save_chunk(f, chunk):
+        """保存一个块到文件"""
+        if chunk:
+            if save_as_tokens:
+                f.write(" ".join(chunk) + "\n")  # 保存 Token
+            else:
+                f.write("".join(chunk) + "\n")  # 保存句子
+
+    with open(output_file, "w") as f:
         for example in dataset:
             text = example["text"]
             if not isinstance(text, str):
-                text = str(text)  # 转换为字符串
+                text = str(text)
             text = text.strip()
+            if not text:
+                continue
+
+            # 1. 切分句子
             sentences = split_sentences(text)
+            if not sentences:
+                continue
 
-            for sentence in sentences:
-                if not sentence.strip():  # 跳过空句子
-                    continue
+            if save_as_tokens:
+                # === Token 级别处理 ===
+                tokens = tokenizer.encode("".join(sentences), add_special_tokens=False)
+                idx = 0
+                while idx < len(tokens):
+                    chunk = tokens[idx : idx + max_length]  # 限制每行最大长度
+                    save_chunk(f, list(map(str, chunk)))
+                    idx += max_length - overlap  # 滑动窗口
+            else:
+                # === 句子级别处理 ===
+                idx = 0
+                current_chunk = []
+                current_length = 0
 
-                tokens = tokenizer.encode(sentence, add_special_tokens=False)
+                while idx < len(sentences):
+                    sentence = sentences[idx]
+                    sentence_length = len(
+                        tokenizer.encode(sentence, add_special_tokens=False)
+                    )
 
-                # 超长句子的处理
-                if len(tokens) > max_length:
-                    if discard_overlength:
-                        # 丢弃超长句子
-                        print(f"丢弃超长句子: {sentence}")
-                        continue
-                    else:
-                        # 截断超长句子
-                        trunc_file.write(f"Original: {sentence}\n")
-                        tokens = tokens[: max_length - 1] + [tokenizer.eos_token_id]
-                        trunc_file.write(f"Truncated: {tokens}\n")
-                        print(f"截断超长句子: {sentence} -> {tokens}")
-
-                # 如果当前块超长，保存当前块
-                while current_length + len(tokens) > max_length:
-                    # 计算可以填充的 token 数量
-                    space_left = max_length - current_length
-
-                    # 保存当前块
-                    if current_chunk:
-                        if save_as_tokens:
-                            f.write(" ".join(current_chunk) + "\n")
-                        else:
-                            f.write("".join(current_chunk) + "\n")
+                    if current_length + sentence_length > max_length:
+                        # 当前块已满，保存并开始新块
+                        save_chunk(f, current_chunk)
                         current_chunk = []
                         current_length = 0
-                    else:
-                        # 当前块为空，直接截断当前句子
-                        trunc_file.write(f"Original (forced truncate): {sentence}\n")
-                        if save_as_tokens:
-                            f.write(" ".join(map(str, tokens[:space_left])) + "\n")
-                        else:
-                            f.write(tokenizer.decode(tokens[:space_left]) + "\n")
-                        tokens = tokens[space_left:]
 
-                # 添加到当前块
-                if save_as_tokens:
-                    current_chunk.extend(map(str, tokens))
-                else:
                     current_chunk.append(sentence)
-                current_length += len(tokens)
+                    current_length += sentence_length
+                    idx += 1
 
-        # 保存最后的块
-        if current_chunk:
-            if save_as_tokens:
-                f.write(" ".join(current_chunk) + "\n")
-            else:
-                f.write("".join(current_chunk) + "\n")
+                # 保存最后一块
+                if current_chunk:
+                    save_chunk(f, current_chunk)

@@ -26,7 +26,8 @@ dependencies = [
   "tokenizers",
   "tqdm",
   "deepspeed",
-  "accelerate"
+  "accelerate",
+  "wandb"
 ]
 
 [project.urls]

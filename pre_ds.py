@@ -11,8 +11,8 @@ def main():
     # 初始化数据集
     data_files = {
         # "wiki": "./dataset_origin/wiki_chinese/data/*.parquet",
-        # "sex1": "./dataset_origin/sex1/*.json",
-        "sex2": "./dataset_origin/sex2/modified_erotic_literature_collection.csv",
+        "sex1": "./dataset_origin/sex1/*.json",
+        # "sex2": "./dataset_origin/sex2/modified_erotic_literature_collection.csv",
     }
     dataset = load_dataset_custom(
         data_files=data_files,
@@ -33,7 +33,7 @@ def main():
         dataset,
         tokenizer_name="tokenizer",
         max_length=512,
-        output_file="sex2.txt",
+        output_file="sex1.txt",
         overlap=2,
         save_as_tokens=True,
     )

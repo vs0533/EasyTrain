@@ -12,7 +12,10 @@ from ..config import (
     LR_SCHEDULER_TYPE,
     DEEPSPEED,
 )
+import os
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(current_dir, "deepspeed3_config.json")
 
 # 设置训练参数
 training_args = TrainingArguments(
@@ -35,5 +38,5 @@ training_args = TrainingArguments(
     log_level="debug",  # 设置日志级别为 debug
     warmup_steps=WARMUP_STEPS,  # warmup 步数
     lr_scheduler_type=LR_SCHEDULER_TYPE,  # 学习率调度器类型
-    # deepspeed="deepspeed_config_0.json",
+    deepspeed=config_path if DEEPSPEED else None,  # 使用 deepspeed",
 )

@@ -25,7 +25,7 @@ dependencies = [
   "datasets",
   "tokenizers",
   "tqdm",
-  "deepspeed",
+  "deepspeed==0.15.4",
   "accelerate",
   "wandb"
 ]

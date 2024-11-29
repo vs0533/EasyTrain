@@ -61,7 +61,7 @@ class TrainModel:
     def start_train(self, train_ds=None, val_ds=None):
         """开始训练"""
         if self.wandb_run_name is not None:
-            wandb_run_name = f"{wandb_run_name}_{''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=2))}"
+            wandb_run_name = f"{self.wandb_run_name}_{''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=2))}"
             wandb_init(name=wandb_run_name, training_args=self.training_args)
         print("开始训练")
         if self.training_args.eval_strategy is not None:
